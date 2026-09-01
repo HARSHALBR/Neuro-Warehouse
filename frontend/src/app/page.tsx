@@ -145,10 +145,10 @@ export default function DashboardPage() {
 
         {/* Right Intelligence HUD (4 Cols) */}
         <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-3.5">
-          <div className="h-[250px] lg:h-[260px]">
+          <div className="h-[300px] xl:h-[320px]">
             <AgentThoughtFeed steps={agentSteps} />
           </div>
-          <div className="flex-1 min-h-[380px] lg:min-h-[420px]">
+          <div className="flex-1 min-h-[380px] xl:min-h-[420px]">
             <ExplainabilityPanel explanation={latestExplanation} warehouseState={warehouseState} />
           </div>
         </div>
