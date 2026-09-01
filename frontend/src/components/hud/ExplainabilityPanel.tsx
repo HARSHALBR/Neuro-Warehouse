@@ -19,28 +19,28 @@ export default function ExplainabilityPanel({ explanation, warehouseState }: Exp
   const hasExplanation = !!explanation;
 
   return (
-    <GlassCard className="p-4 flex flex-col h-full">
+    <GlassCard className="p-4 flex flex-col h-full overflow-hidden">
       {/* Header with Navigation Tabs */}
-      <div className="flex items-center justify-between border-b border-[var(--border-glass)] pb-3 mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-glass)] pb-3 mb-3">
         <div className="flex items-center gap-2">
           {hasExplanation ? (
-            <Sparkles className="w-4 h-4 text-fuchsia-600 dark:text-fuchsia-400" />
+            <Sparkles className="w-4 h-4 text-fuchsia-600 dark:text-fuchsia-400 shrink-0" />
           ) : (
-            <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           )}
-          <h3 className="text-sm font-bold tracking-wider uppercase text-[var(--text-primary)]">
-            {hasExplanation ? "Decision Factor Explainability" : "Live Fleet & Mission Telemetry"}
+          <h3 className="text-xs sm:text-sm font-bold tracking-wider uppercase text-[var(--text-primary)] truncate">
+            {hasExplanation ? "Decision Factor Explainability" : "Live Fleet & Orders Telemetry"}
           </h3>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1 bg-[var(--surface-sub)] p-1 rounded-xl border border-[var(--border-glass)] text-xs shadow-sm">
+        <div className="flex items-center gap-1 bg-[var(--surface-sub)] p-1 rounded-xl border border-[var(--border-glass)] text-xs shadow-sm self-start sm:self-auto">
           {hasExplanation && (
             <button
               onClick={() => setActiveTab("EXPLAIN")}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 activeTab === "EXPLAIN"
-                  ? "bg-fuchsia-600 text-white shadow-md"
+                  ? "bg-fuchsia-600 text-white shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -49,19 +49,19 @@ export default function ExplainabilityPanel({ explanation, warehouseState }: Exp
           )}
           <button
             onClick={() => setActiveTab("FLEET")}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
               activeTab === "FLEET" || (!hasExplanation && activeTab === "EXPLAIN")
-                ? "bg-sky-600 text-white shadow-md"
+                ? "bg-sky-600 text-white shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
-            Fleet (12 AGVs)
+            Fleet (12)
           </button>
           <button
             onClick={() => setActiveTab("ORDERS")}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
               activeTab === "ORDERS"
-                ? "bg-emerald-600 text-white shadow-md"
+                ? "bg-emerald-600 text-white shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -76,51 +76,59 @@ export default function ExplainabilityPanel({ explanation, warehouseState }: Exp
         {hasExplanation && activeTab === "EXPLAIN" && (
           <div className="space-y-3 animate-slide-up">
             {/* Why Summary Card */}
-            <div className="bg-[var(--surface-sub)] border border-fuchsia-300 dark:border-fuchsia-500/30 rounded-2xl p-4 text-xs text-[var(--text-primary)] leading-relaxed font-sans shadow-sm">
+            <div className="bg-[var(--surface-sub)] border border-fuchsia-300 dark:border-fuchsia-500/30 rounded-2xl p-3.5 text-xs text-[var(--text-primary)] leading-relaxed font-sans shadow-sm">
               <div className="flex items-center gap-2 mb-1.5 font-extrabold text-fuchsia-700 dark:text-fuchsia-400">
-                <Sparkles className="w-4 h-4" />
-                <span>Selected Candidate: {explanation.selected_robot_id || "R07"} (Recovery Plan Active)</span>
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>Selected Candidate: {explanation.selected_robot_id || "R07"} (Recovery Active)</span>
               </div>
               <p className="text-[var(--text-secondary)] leading-relaxed text-xs font-medium">{explanation.summary_sentence}</p>
             </div>
 
-            {/* Factor Breakdown Cards */}
-            <div className="grid grid-cols-3 gap-2.5">
+            {/* Factor Breakdown Cards — Stacked Layout to Prevent Text Overlap */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {(explanation.key_factors || []).map((f: any, idx: number) => {
-                let icon = <Battery className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />;
-                if (f.name.includes("Distance")) icon = <Navigation className="w-4 h-4 text-sky-600 dark:text-sky-400" />;
-                if (f.name.includes("Clearance")) icon = <ShieldAlert className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
+                let icon = <Battery className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />;
+                if (f.name.includes("Distance")) icon = <Navigation className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />;
+                if (f.name.includes("Clearance")) icon = <ShieldAlert className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
 
                 return (
-                  <div key={idx} className="bg-[var(--surface-sub)] border border-[var(--border-glass)] rounded-2xl p-3 shadow-sm">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] font-bold">
+                  <div key={idx} className="bg-[var(--surface-sub)] border border-[var(--border-glass)] rounded-2xl p-3 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)] font-bold mb-1">
                         {icon}
                         <span className="truncate">{f.name}</span>
                       </div>
-                      <span className="text-xs font-mono font-extrabold text-[var(--text-primary)]">{f.value}</span>
+                      <div className="text-base font-mono font-extrabold text-[var(--text-primary)] mb-1">
+                        {f.value}
+                      </div>
                     </div>
-                    <p className="text-[11px] text-[var(--text-muted)] leading-tight font-medium">{f.description}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-snug font-medium line-clamp-3">
+                      {f.description}
+                    </p>
                   </div>
                 );
               })}
             </div>
 
-            {/* Deliberation Comparison Matrix */}
-            <div className="bg-[var(--surface-sub)] border border-[var(--border-glass)] rounded-2xl p-4 shadow-sm">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2.5">
-                Candidate Ranking & Deliberation Matrix
-              </h4>
+            {/* Deliberation Comparison Matrix with Smooth Horizontal Scrolling */}
+            <div className="bg-[var(--surface-sub)] border border-[var(--border-glass)] rounded-2xl p-3.5 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Candidate Ranking Matrix
+                </h4>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">11 Evaluated</span>
+              </div>
+              
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[460px] text-left text-xs">
                   <thead>
-                    <tr className="text-[var(--text-secondary)] border-b border-[var(--border-glass)] pb-2 font-mono text-[11px] font-bold">
-                      <th className="py-1.5">AGV</th>
-                      <th>Composite Score</th>
-                      <th>Battery</th>
-                      <th>A* Dist</th>
-                      <th>Congestion</th>
-                      <th>Outcome</th>
+                    <tr className="text-[var(--text-muted)] border-b border-[var(--border-glass)] pb-2 font-mono text-[11px] font-bold">
+                      <th className="py-2 px-2">AGV</th>
+                      <th className="py-2 px-2">Score</th>
+                      <th className="py-2 px-2">Battery</th>
+                      <th className="py-2 px-2">A* Dist</th>
+                      <th className="py-2 px-2">Congestion</th>
+                      <th className="py-2 px-2 text-right">Outcome</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-glass)] font-mono text-xs">
@@ -128,18 +136,18 @@ export default function ExplainabilityPanel({ explanation, warehouseState }: Exp
                       const isWinner = c.outcome === "SELECTED";
                       return (
                         <tr key={idx} className={isWinner ? "bg-fuchsia-100/90 dark:bg-fuchsia-950/40 text-fuchsia-900 dark:text-fuchsia-200 font-bold" : "text-[var(--text-secondary)]"}>
-                          <td className="py-2.5 flex items-center gap-1.5 font-bold">
-                            {isWinner && <CheckCircle className="w-4 h-4 text-fuchsia-600 dark:text-fuchsia-400" />}
+                          <td className="py-2.5 px-2 flex items-center gap-1.5 font-bold">
+                            {isWinner && <CheckCircle className="w-3.5 h-3.5 text-fuchsia-600 dark:text-fuchsia-400 shrink-0" />}
                             {c.robot_id}
                           </td>
-                          <td className={isWinner ? "text-fuchsia-700 dark:text-fuchsia-400 font-extrabold" : "text-[var(--text-muted)]"}>
+                          <td className={`py-2.5 px-2 ${isWinner ? "text-fuchsia-700 dark:text-fuchsia-400 font-extrabold" : "text-[var(--text-muted)]"}`}>
                             {typeof c.composite_score === "number" ? c.composite_score.toFixed(4) : c.composite_score}
                           </td>
-                          <td>{c.battery}</td>
-                          <td>{c.distance}</td>
-                          <td>{c.congestion}</td>
-                          <td>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                          <td className="py-2.5 px-2">{c.battery}</td>
+                          <td className="py-2.5 px-2">{c.distance}</td>
+                          <td className="py-2.5 px-2">{c.congestion}</td>
+                          <td className="py-2.5 px-2 text-right">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border inline-block whitespace-nowrap ${
                               isWinner
                                 ? "bg-fuchsia-200 dark:bg-fuchsia-500/20 text-fuchsia-900 dark:text-fuchsia-300 border-fuchsia-300 dark:border-fuchsia-500/40"
                                 : "bg-slate-100 dark:bg-[var(--surface-glass)] text-[var(--text-muted)] border-slate-200 dark:border-slate-800"
@@ -225,7 +233,7 @@ export default function ExplainabilityPanel({ explanation, warehouseState }: Exp
               return (
                 <div key={oId} className="bg-[var(--surface-sub)] border border-[var(--border-glass)] rounded-2xl p-3.5 flex items-center justify-between text-xs shadow-sm">
                   <div className="flex items-center gap-3">
-                    <Box className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400" />
+                    <Box className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400 shrink-0" />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold font-mono text-[var(--text-primary)] text-sm">{oId}</span>
