@@ -2,7 +2,7 @@
 
 import React from "react";
 import GlassCard from "@/components/common/GlassCard";
-import { RotateCcw, AlertTriangle, GitBranch, Smartphone, ExternalLink, RefreshCw } from "lucide-react";
+import { RotateCcw, GitBranch, Smartphone, ExternalLink, RefreshCw } from "lucide-react";
 
 interface ControlToolbarProps {
   onReset: () => void;
@@ -25,9 +25,9 @@ export default function ControlToolbar({
         <button
           onClick={onReset}
           disabled={isProcessing}
-          className="px-4 py-2.5 rounded-xl border border-[var(--border-glass)] bg-[var(--surface-sub)] hover:bg-slate-800/50 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-bold font-mono flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 active:scale-95"
+          className="px-4 py-2.5 rounded-xl border border-[var(--border-glass)] bg-[var(--surface-sub)] hover:bg-slate-100 dark:hover:bg-slate-800/60 text-[var(--text-primary)] text-xs font-bold font-mono flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 active:scale-95"
         >
-          <RotateCcw className="w-4 h-4 text-slate-400" />
+          <RotateCcw className="w-4 h-4 text-[var(--text-muted)]" />
           <span>RESET DEMO</span>
         </button>
 
@@ -49,9 +49,9 @@ export default function ControlToolbar({
         <button
           onClick={onOpenWhatIf}
           disabled={isProcessing}
-          className="px-4 py-2.5 rounded-xl bg-[var(--surface-sub)] hover:bg-fuchsia-950/40 border border-fuchsia-500/40 text-fuchsia-300 hover:text-fuchsia-200 text-xs font-bold flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 active:scale-95"
+          className="px-4 py-2.5 rounded-xl bg-fuchsia-50 dark:bg-[var(--surface-sub)] hover:bg-fuchsia-100 dark:hover:bg-fuchsia-950/40 border border-fuchsia-300 dark:border-fuchsia-500/40 text-fuchsia-800 dark:text-fuchsia-300 text-xs font-bold flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 active:scale-95"
         >
-          <GitBranch className="w-4 h-4 text-fuchsia-400" />
+          <GitBranch className="w-4 h-4 text-fuchsia-600 dark:text-fuchsia-400" />
           <span>WHAT-IF R07</span>
         </button>
       </div>
@@ -62,9 +62,9 @@ export default function ControlToolbar({
           href="/mobile/"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-2.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/40 text-sky-400 hover:text-sky-300 text-xs font-bold flex items-center gap-2 transition-all"
+          className="px-4 py-2.5 rounded-xl bg-sky-50 dark:bg-blue-600/15 hover:bg-sky-100 dark:hover:bg-blue-600/25 border border-sky-300 dark:border-blue-500/40 text-sky-800 dark:text-sky-300 text-xs font-bold flex items-center gap-2 transition-all shadow-sm"
         >
-          <Smartphone className="w-4 h-4" />
+          <Smartphone className="w-4 h-4 text-sky-600 dark:text-sky-400" />
           <span>iQOO Mobile Operator Client</span>
           <ExternalLink className="w-3.5 h-3.5 opacity-70" />
         </a>

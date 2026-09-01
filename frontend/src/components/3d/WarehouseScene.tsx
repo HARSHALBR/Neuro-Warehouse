@@ -508,31 +508,31 @@ export default function WarehouseScene({ state }: WarehouseSceneProps) {
       <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
       {/* Top Left Floating Digital Twin Badge */}
-      <div className="absolute top-4 left-4 bg-surface-card/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-border-subtle text-xs font-mono flex items-center gap-3 shadow-xl">
-        <span className="flex items-center gap-2 font-bold text-slate-100">
-          <span className="w-3 h-3 rounded-full bg-semantic-success animate-pulse shadow-[0_0_10px_#10b981]"></span>
+      <div className="absolute top-4 left-4 bg-[var(--surface-glass)] backdrop-blur-md px-4 py-2.5 rounded-xl border border-[var(--border-glass)] text-xs font-mono flex items-center gap-3 shadow-xl">
+        <span className="flex items-center gap-2 font-bold text-[var(--text-primary)]">
+          <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]"></span>
           AUTONOMOUS DIGITAL TWIN
         </span>
-        <span className="text-slate-400">| 10Hz Kinematics • 30×20 Grid</span>
+        <span className="text-[var(--text-muted)] font-semibold">| 10Hz Kinematics • 30×20 Grid</span>
       </div>
 
       {/* Bottom Floating Legend */}
-      <div className="absolute bottom-4 left-4 bg-surface-card/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-border-subtle text-xs flex gap-5 shadow-xl">
+      <div className="absolute bottom-4 left-4 bg-[var(--surface-glass)] backdrop-blur-md px-4 py-2.5 rounded-xl border border-[var(--border-glass)] text-xs flex gap-5 shadow-xl">
         <div className="flex items-center gap-2">
-          <span className="w-3.5 h-3.5 rounded-full bg-semantic-success shadow-[0_0_8px_#10b981]"></span>
-          <span className="font-semibold text-slate-200">Active Fleet</span>
+          <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+          <span className="font-bold text-[var(--text-primary)]">Active Fleet</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3.5 h-3.5 rounded-full bg-semantic-failure animate-ping shadow-[0_0_10px_#f43f5e]"></span>
-          <span className="font-bold text-semantic-failure">Failed (R04)</span>
+          <span className="w-3.5 h-3.5 rounded-full bg-rose-500 animate-ping shadow-[0_0_10px_#f43f5e]"></span>
+          <span className="font-bold text-rose-600 dark:text-rose-400">Failed (R04)</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3.5 h-3.5 rounded-full bg-semantic-recovery shadow-[0_0_10px_#d946ef]"></span>
-          <span className="font-bold text-fuchsia-300">Recovering (R07)</span>
+          <span className="w-3.5 h-3.5 rounded-full bg-fuchsia-500 shadow-[0_0_10px_#d946ef]"></span>
+          <span className="font-bold text-fuchsia-700 dark:text-fuchsia-300">Recovering (R07)</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3.5 h-3.5 rounded-full bg-semantic-info shadow-[0_0_8px_#38bdf8]"></span>
-          <span className="font-semibold text-slate-200">Charging Bays</span>
+          <span className="w-3.5 h-3.5 rounded-full bg-sky-500 shadow-[0_0_8px_#38bdf8]"></span>
+          <span className="font-bold text-[var(--text-primary)]">Charging Bays</span>
         </div>
       </div>
     </div>
