@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { WarehouseFullState, RobotState } from "@/hooks/useWarehouseSocket";
 
@@ -9,47 +9,53 @@ interface WarehouseSceneProps {
   onSelectRobot?: (robotId: string) => void;
 }
 
-function createTextSprite(text: string, bgColor: string, textColor = "#ffffff", borderColor = "#38bdf8") {
+// Crisp Canvas Texture for Floating Labels
+function createCrispLabelTexture(text: string, bgColor: string, borderColor: string, textColor = "#ffffff") {
   const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 72;
+  canvas.width = 512;
+  canvas.height = 144;
   const ctx = canvas.getContext("2d");
   if (ctx) {
+    ctx.clearRect(0, 0, 512, 144);
+
+    // Pill background
     ctx.fillStyle = bgColor;
     ctx.beginPath();
     if (ctx.roundRect) {
-      ctx.roundRect(8, 6, 240, 60, 10);
+      ctx.roundRect(16, 12, 480, 120, 24);
     } else {
-      ctx.rect(8, 6, 240, 60);
+      ctx.rect(16, 12, 480, 120);
     }
     ctx.fill();
-    ctx.lineWidth = 5;
+
+    // Glowing border
+    ctx.lineWidth = 10;
     ctx.strokeStyle = borderColor;
     ctx.stroke();
 
+    // Label Text
     ctx.fillStyle = textColor;
-    ctx.font = "bold 28px sans-serif";
+    ctx.font = "bold 52px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, 128, 36);
+    ctx.fillText(text, 256, 72);
   }
   const texture = new THREE.CanvasTexture(canvas);
-  const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
-  const sprite = new THREE.Sprite(spriteMat);
-  sprite.scale.set(1.5, 0.42, 1);
-  return sprite;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  return texture;
 }
 
-export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneProps) {
+export default function WarehouseScene({ state }: WarehouseSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
-  // Mesh registries for fast delta updates
   const robotMeshesRef = useRef<Map<string, THREE.Group>>(new Map());
   const routeLinesRef = useRef<Map<string, THREE.Line>>(new Map());
   const targetPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const targetMarkerRef = useRef<THREE.Mesh | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -57,19 +63,19 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
     const width = mountRef.current.clientWidth;
     const height = mountRef.current.clientHeight;
 
-    // 1. Scene setup
+    // 1. Scene Setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#07090e");
-    scene.fog = new THREE.FogExp2("#07090e", 0.015);
+    scene.background = new THREE.Color("#080c14");
+    scene.fog = new THREE.FogExp2("#080c14", 0.012);
     sceneRef.current = scene;
 
-    // 2. Camera setup (Isometric Command Center Perspective)
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(15, 32, 28);
-    camera.lookAt(15, 0, 10);
+    // 2. Camera Setup (Optimized Command Center Isometric Angle)
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.5, 500);
+    camera.position.set(15, 23, 23);
+    camera.lookAt(15, 0, 9.5);
     cameraRef.current = camera;
 
-    // 3. Renderer setup
+    // 3. Renderer Setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -79,28 +85,28 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
 
     mountRef.current.appendChild(renderer.domElement);
 
-    // 4. Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    // 4. Vibrant Lighting Setup
+    const ambientLight = new THREE.AmbientLight(0xdbeafe, 1.2);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0x60a5fa, 1.2);
-    dirLight.position.set(15, 40, 20);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-    scene.add(dirLight);
+    const mainSun = new THREE.DirectionalLight(0xffffff, 1.8);
+    mainSun.position.set(15, 35, 25);
+    mainSun.castShadow = true;
+    mainSun.shadow.mapSize.width = 2048;
+    mainSun.shadow.mapSize.height = 2048;
+    mainSun.shadow.bias = -0.0005;
+    scene.add(mainSun);
 
-    // Subdued purple rim light
-    const pointLight = new THREE.PointLight(0x8b5cf6, 2.0, 50);
-    pointLight.position.set(15, 10, 10);
-    scene.add(pointLight);
+    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.8);
+    fillLight.position.set(-10, 20, -10);
+    scene.add(fillLight);
 
-    // 5. Floor & Grid (30x20 cells, 1 unit per cell)
+    // 5. Floor & Aisle Markings (30 x 20 Grid)
     const floorGeo = new THREE.PlaneGeometry(30, 20);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x0d121d,
-      roughness: 0.8,
-      metalness: 0.2,
+      color: 0x0f172a,
+      roughness: 0.6,
+      metalness: 0.3,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
@@ -108,23 +114,22 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Grid helper overlay
-    const gridHelper = new THREE.GridHelper(30, 30, 0x1e293b, 0x141b27);
-    gridHelper.position.set(14.5, 0.01, 9.5);
+    // Subtle Grid Helper
+    const gridHelper = new THREE.GridHelper(30, 30, 0x334155, 0x1e293b);
+    gridHelper.position.set(14.5, 0.015, 9.5);
     gridHelper.scale.set(1, 1, 20 / 30);
     scene.add(gridHelper);
 
-    // Boundary frame
-    const frameGeo = new THREE.BoxGeometry(30.4, 0.2, 20.4);
-    const frameMat = new THREE.MeshBasicMaterial({ color: 0x2563eb, wireframe: true });
-    const frame = new THREE.Mesh(frameGeo, frameMat);
-    frame.position.set(14.5, 0.1, 9.5);
-    scene.add(frame);
+    // Neon Floor Perimeter Border (Clean Outline without diagonal cross-wireframe)
+    const borderEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(30, 0.05, 20));
+    const borderLine = new THREE.LineSegments(borderEdges, new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 }));
+    borderLine.position.set(14.5, 0.02, 9.5);
+    scene.add(borderLine);
 
     // 6. Charging Bays (x=1, y=1..4)
     for (let y = 1; y <= 4; y++) {
-      const padGeo = new THREE.BoxGeometry(0.85, 0.05, 0.85);
-      const padMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 0.6 });
+      const padGeo = new THREE.BoxGeometry(1.2, 0.04, 1.2);
+      const padMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.8 });
       const pad = new THREE.Mesh(padGeo, padMat);
       pad.position.set(1, 0.03, y);
       scene.add(pad);
@@ -132,64 +137,105 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
 
     // 7. Dropoff Stations (x=28, y=5, 10, 15)
     [5, 10, 15].forEach((y) => {
-      const dropGeo = new THREE.BoxGeometry(1.2, 0.08, 1.2);
-      const dropMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.5 });
+      const dropGeo = new THREE.BoxGeometry(1.4, 0.06, 1.4);
+      const dropMat = new THREE.MeshStandardMaterial({ color: 0xd97706, emissive: 0xb45309, emissiveIntensity: 0.8 });
       const drop = new THREE.Mesh(dropGeo, dropMat);
       drop.position.set(28, 0.04, y);
       scene.add(drop);
     });
 
-    // 8. Shelves Construction (Instanced Mesh for fast performance)
-    const shelfGeo = new THREE.BoxGeometry(0.8, 1.8, 0.8);
-    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.4 });
-    const shelfInst = new THREE.InstancedMesh(shelfGeo, shelfMat, 48);
-    shelfInst.castShadow = true;
-    shelfInst.receiveShadow = true;
+    // 8. Modular Warehouse Shelves (Detailed Racks with Colorful Storage Crates)
+    const binColors = [0x3b82f6, 0xf59e0b, 0x10b981, 0xef4444, 0x8b5cf6, 0x06b6d4];
+    const shelfCols = [6, 12, 18, 24];
+    const shelfRows = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
 
-    const dummy = new THREE.Object3D();
-    let idx = 0;
-    for (const col of [6, 12, 18, 24]) {
-      for (const row of [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16]) {
-        dummy.position.set(col, 0.9, row);
-        dummy.updateMatrix();
-        shelfInst.setMatrixAt(idx++, dummy.matrix);
-      }
-    }
-    scene.add(shelfInst);
+    shelfCols.forEach((col, cIdx) => {
+      // Aisle Overhead Sign
+      const aisleSignTex = createCrispLabelTexture(`AISLE ${cIdx + 1}`, "#1e293b", "#38bdf8", "#38bdf8");
+      const aisleSignMat = new THREE.SpriteMaterial({ map: aisleSignTex, transparent: true });
+      const aisleSign = new THREE.Sprite(aisleSignMat);
+      aisleSign.scale.set(2.2, 0.6, 1);
+      aisleSign.position.set(col, 2.8, 2);
+      scene.add(aisleSign);
 
-    // Mouse Drag Rotation / Orbiting
+      shelfRows.forEach((row) => {
+        // Shelf Metallic Frame
+        const rackGroup = new THREE.Group();
+        rackGroup.position.set(col, 0, row);
+
+        const frameGeo = new THREE.BoxGeometry(0.85, 1.6, 0.85);
+        const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.7 });
+        const rackMesh = new THREE.Mesh(frameGeo, frameMat);
+        rackMesh.position.y = 0.8;
+        rackMesh.castShadow = true;
+        rackMesh.receiveShadow = true;
+        rackGroup.add(rackMesh);
+
+        // Bins on Shelf Tiers
+        const binColor = binColors[(col * 3 + row) % binColors.length];
+        const binGeo = new THREE.BoxGeometry(0.7, 0.35, 0.7);
+        const binMat = new THREE.MeshStandardMaterial({ color: binColor, roughness: 0.4 });
+        const bin = new THREE.Mesh(binGeo, binMat);
+        bin.position.y = 0.9;
+        rackGroup.add(bin);
+
+        scene.add(rackGroup);
+      });
+    });
+
+    // 9. Target Waypoint Highlight Ring (for active recovery)
+    const targetGeo = new THREE.RingGeometry(0.5, 0.7, 32);
+    const targetMat = new THREE.MeshBasicMaterial({ color: 0xa855f7, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+    const targetMarker = new THREE.Mesh(targetGeo, targetMat);
+    targetMarker.rotation.x = -Math.PI / 2;
+    targetMarker.position.set(7, 0.05, 7);
+    targetMarker.visible = false;
+    scene.add(targetMarker);
+    targetMarkerRef.current = targetMarker;
+
+    // Mouse Controls (Pan & Orbit)
     let isDragging = false;
-    let prevMouseX = 0;
-    let prevMouseY = 0;
+    let prevX = 0;
+    let prevY = 0;
 
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true;
-      prevMouseX = e.clientX;
-      prevMouseY = e.clientY;
+      prevX = e.clientX;
+      prevY = e.clientY;
     };
 
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging || !cameraRef.current) return;
-      const dx = (e.clientX - prevMouseX) * 0.005;
-      const dy = (e.clientY - prevMouseY) * 0.005;
-      prevMouseX = e.clientX;
-      prevMouseY = e.clientY;
+      const dx = (e.clientX - prevX) * 0.004;
+      const dy = (e.clientY - prevY) * 0.004;
+      prevX = e.clientX;
+      prevY = e.clientY;
 
-      cameraRef.current.position.x -= dx * 10;
-      cameraRef.current.position.z -= dy * 10;
-      cameraRef.current.lookAt(15, 0, 10);
+      cameraRef.current.position.x -= dx * 12;
+      cameraRef.current.position.z -= dy * 12;
+      cameraRef.current.position.y = Math.max(12, Math.min(35, cameraRef.current.position.y + dy * 8));
+      cameraRef.current.lookAt(15, 0, 9.5);
     };
 
     const onMouseUp = () => {
       isDragging = false;
     };
 
+    const onWheel = (e: WheelEvent) => {
+      if (!cameraRef.current) return;
+      const zoomDelta = e.deltaY * 0.02;
+      cameraRef.current.position.y = Math.max(10, Math.min(40, cameraRef.current.position.y + zoomDelta));
+      cameraRef.current.position.z = Math.max(10, Math.min(40, cameraRef.current.position.z + zoomDelta));
+      cameraRef.current.lookAt(15, 0, 9.5);
+    };
+
     const dom = renderer.domElement;
     dom.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+    dom.addEventListener("wheel", onWheel, { passive: true });
 
-    // Resize handler
+    // Resize Handler
     const onResize = () => {
       if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
       const w = mountRef.current.clientWidth;
@@ -200,29 +246,35 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
     };
     window.addEventListener("resize", onResize);
 
-    // Animation Render Loop
+    // Render Animation Loop
     let animId: number;
     const clock = new THREE.Clock();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
 
-      // Smooth Lerp Interpolation for Robots
+      // Smooth Robot Lerp Movement
       robotMeshesRef.current.forEach((mesh, rId) => {
         const target = targetPositionsRef.current.get(rId);
         if (target) {
-          mesh.position.x += (target.x - mesh.position.x) * 0.15;
-          mesh.position.z += (target.y - mesh.position.z) * 0.15;
+          mesh.position.x += (target.x - mesh.position.x) * 0.2;
+          mesh.position.z += (target.y - mesh.position.z) * 0.2;
         }
 
-        // Pulse failed robot mesh
-        const statusRing = mesh.getObjectByName("statusRing") as THREE.Mesh;
-        if (statusRing && mesh.userData.status === "FAILED") {
-          const s = 1.0 + Math.sin(clock.getElapsedTime() * 8) * 0.15;
-          statusRing.scale.set(s, s, s);
+        // Alarm animation on failed robot
+        if (mesh.userData.status === "FAILED") {
+          const s = 1.0 + Math.sin(elapsed * 10) * 0.25;
+          const aura = mesh.getObjectByName("hazardAura") as THREE.Mesh;
+          if (aura) aura.scale.set(s, s, s);
         }
       });
+
+      // Pulse target pick marker
+      if (targetMarkerRef.current && targetMarkerRef.current.visible) {
+        const ts = 1.0 + Math.sin(elapsed * 6) * 0.2;
+        targetMarkerRef.current.scale.set(ts, ts, ts);
+      }
 
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
@@ -235,6 +287,7 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
       dom.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+      dom.removeEventListener("wheel", onWheel);
       window.removeEventListener("resize", onResize);
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
@@ -243,41 +296,40 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
     };
   }, []);
 
-  // Update Dynamic Robots and Routes when state changes
+  // Synchronize Live Robots, Status Badges & Trajectories from WebSocket State
   useEffect(() => {
     if (!sceneRef.current || !state) return;
     const scene = sceneRef.current;
 
-    const activeRobotIds = new Set<string>();
+    let hasFailedRobot = false;
 
     Object.entries(state.robots || {}).forEach(([rId, robot]: [string, RobotState]) => {
-      activeRobotIds.add(rId);
       targetPositionsRef.current.set(rId, { x: robot.position[0], y: robot.position[1] });
 
       let group = robotMeshesRef.current.get(rId);
 
-      // 1. Create robot mesh if not present
+      // 1. Create Detailed AGV Model if not exists
       if (!group) {
         group = new THREE.Group();
         group.name = `robot_${rId}`;
         group.position.set(robot.position[0], 0.2, robot.position[1]);
 
-        // Base AGV Chassis (Rounded box)
-        const bodyGeo = new THREE.BoxGeometry(0.7, 0.28, 0.7);
-        const bodyMat = new THREE.MeshStandardMaterial({
+        // Main AGV Chassis
+        const chassisGeo = new THREE.BoxGeometry(0.85, 0.3, 0.85);
+        const chassisMat = new THREE.MeshStandardMaterial({
           color: new THREE.Color(robot.color || "#3b82f6"),
-          roughness: 0.3,
-          metalness: 0.7,
+          roughness: 0.25,
+          metalness: 0.8,
         });
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.castShadow = true;
-        body.position.y = 0.14;
-        group.add(body);
+        const chassis = new THREE.Mesh(chassisGeo, chassisMat);
+        chassis.position.y = 0.15;
+        chassis.castShadow = true;
+        group.add(chassis);
 
-        // Status Indicator Ring
-        const ringGeo = new THREE.RingGeometry(0.42, 0.52, 24);
+        // Status Neon Ground Ring
+        const ringGeo = new THREE.RingGeometry(0.5, 0.65, 32);
         const ringMat = new THREE.MeshBasicMaterial({
-          color: 0x3b82f6,
+          color: 0x10b981,
           side: THREE.DoubleSide,
           transparent: true,
           opacity: 0.9,
@@ -285,17 +337,33 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.name = "statusRing";
         ring.rotation.x = -Math.PI / 2;
-        ring.position.y = 0.02;
+        ring.position.y = 0.03;
         group.add(ring);
 
-        // Top Sensor Dome
-        const domeGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.12, 16);
-        const domeMat = new THREE.MeshStandardMaterial({ color: 0x111827 });
-        const dome = new THREE.Mesh(domeGeo, domeMat);
-        // Floating Text Label Sprite
-        const sprite = createTextSprite(rId, "#1e293b", "#ffffff", "#3b82f6");
+        // Hazard Aura for failure
+        const auraGeo = new THREE.RingGeometry(0.65, 0.95, 32);
+        const auraMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+        const aura = new THREE.Mesh(auraGeo, auraMat);
+        aura.name = "hazardAura";
+        aura.rotation.x = -Math.PI / 2;
+        aura.position.y = 0.02;
+        aura.visible = false;
+        group.add(aura);
+
+        // Top Sensor Beacon
+        const beaconGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.16, 24);
+        const beaconMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 });
+        const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+        beacon.position.y = 0.35;
+        group.add(beacon);
+
+        // Floating Text Sprite
+        const spriteTex = createCrispLabelTexture(rId, "#0f172a", "#38bdf8");
+        const spriteMat = new THREE.SpriteMaterial({ map: spriteTex, transparent: true, depthTest: false });
+        const sprite = new THREE.Sprite(spriteMat);
         sprite.name = "textSprite";
-        sprite.position.set(0, 0.75, 0);
+        sprite.scale.set(1.8, 0.5, 1);
+        sprite.position.set(0, 0.95, 0);
         group.add(sprite);
 
         scene.add(group);
@@ -304,55 +372,55 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
 
       group.userData = { id: rId, status: robot.status };
 
-      // Update Visual Colors and Text Label Based on Live Status
+      // 2. Update Visual Colors & Badges based on status
       const ring = group.getObjectByName("statusRing") as THREE.Mesh;
-      if (ring) {
-        const ringMat = ring.material as THREE.MeshBasicMaterial;
-        if (robot.status === "FAILED") {
-          ringMat.color.setHex(0xef4444); // Bright Red
-        } else if (robot.status === "RECOVERING") {
-          ringMat.color.setHex(0x8b5cf6); // Recovery Purple
-        } else if (robot.status === "CHARGING") {
-          ringMat.color.setHex(0x06b6d4); // Charging Cyan
-        } else {
-          ringMat.color.setHex(0x10b981); // Healthy Green
+      const aura = group.getObjectByName("hazardAura") as THREE.Mesh;
+      const sprite = group.getObjectByName("textSprite") as THREE.Sprite;
+
+      if (robot.status === "FAILED") {
+        hasFailedRobot = true;
+        if (ring) (ring.material as THREE.MeshBasicMaterial).color.setHex(0xef4444);
+        if (aura) aura.visible = true;
+        if (sprite) {
+          sprite.material.map = createCrispLabelTexture(`⚠️ ${rId} FAILED`, "#7f1d1d", "#ef4444", "#fecaca");
+          sprite.material.needsUpdate = true;
+        }
+      } else if (robot.status === "RECOVERING") {
+        if (ring) (ring.material as THREE.MeshBasicMaterial).color.setHex(0xa855f7);
+        if (aura) aura.visible = false;
+        if (sprite) {
+          sprite.material.map = createCrispLabelTexture(`⚡ ${rId} RECOVER`, "#581c87", "#c084fc", "#f3e8ff");
+          sprite.material.needsUpdate = true;
+        }
+      } else if (robot.status === "CHARGING") {
+        if (ring) (ring.material as THREE.MeshBasicMaterial).color.setHex(0x06b6d4);
+        if (aura) aura.visible = false;
+        if (sprite) {
+          sprite.material.map = createCrispLabelTexture(`🔋 ${rId} ${Math.round(robot.battery)}%`, "#0c4a6e", "#38bdf8", "#e0f2fe");
+          sprite.material.needsUpdate = true;
+        }
+      } else {
+        // Normal / Moving
+        if (ring) (ring.material as THREE.MeshBasicMaterial).color.setHex(0x10b981);
+        if (aura) aura.visible = false;
+        if (sprite) {
+          sprite.material.map = createCrispLabelTexture(`${rId} • ${Math.round(robot.battery)}%`, "#0f172a", "#38bdf8", "#ffffff");
+          sprite.material.needsUpdate = true;
         }
       }
 
-      // Update Floating Label text if status changed
-      const oldSprite = group.getObjectByName("textSprite");
-      if (oldSprite) {
-        group.remove(oldSprite);
-        let labelText = `${rId} ${Math.round(robot.battery)}%`;
-        let bgCol = "#0f172a";
-        let borderCol = "#3b82f6";
-        if (robot.status === "FAILED") {
-          labelText = `${rId} ❌ FAILED`;
-          bgCol = "#7f1d1d";
-          borderCol = "#ef4444";
-        } else if (robot.status === "RECOVERING") {
-          labelText = `${rId} ⚡ RECOVER`;
-          bgCol = "#581c87";
-          borderCol = "#a855f7";
-        }
-        const newSprite = createTextSprite(labelText, bgCol, "#ffffff", borderCol);
-        newSprite.name = "textSprite";
-        newSprite.position.set(0, 0.75, 0);
-        group.add(newSprite);
-      }
-
-      // 2. Render A* Navigation Trajectory
+      // 3. Render 3D A* Route Trajectory
       let line = routeLinesRef.current.get(rId);
       if (robot.route && robot.route.length > 1) {
-        const points = robot.route.map((pt) => new THREE.Vector3(pt[0], 0.08, pt[1]));
+        const points = robot.route.map((pt) => new THREE.Vector3(pt[0], 0.12, pt[1]));
         const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
 
         if (!line) {
           const lineMat = new THREE.LineBasicMaterial({
-            color: robot.status === "RECOVERING" ? 0xa855f7 : 0x3b82f6,
-            linewidth: 3,
+            color: robot.status === "RECOVERING" ? 0xc084fc : 0x38bdf8,
+            linewidth: 4,
             transparent: true,
-            opacity: 0.85,
+            opacity: 0.9,
           });
           line = new THREE.Line(lineGeo, lineMat);
           scene.add(line);
@@ -361,7 +429,7 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
           line.geometry.dispose();
           line.geometry = lineGeo;
           (line.material as THREE.LineBasicMaterial).color.setHex(
-            robot.status === "RECOVERING" ? 0xa855f7 : 0x3b82f6
+            robot.status === "RECOVERING" ? 0xc084fc : 0x38bdf8
           );
           line.visible = true;
         }
@@ -369,38 +437,43 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
         line.visible = false;
       }
     });
+
+    // Show/hide target waypoint marker during failure recovery
+    if (targetMarkerRef.current) {
+      targetMarkerRef.current.visible = hasFailedRobot;
+    }
   }, [state]);
 
   return (
-    <div className="relative w-full h-full min-h-[520px] bg-[#07090e] rounded-xl overflow-hidden border border-slate-800">
-      <div ref={mountRef} className="w-full h-full" />
-      
-      {/* 3D Viewport Controls Overlay */}
-      <div className="absolute top-3 left-3 bg-[#0f141f]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono flex items-center gap-3">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          DIGITAL TWIN 3D VIEW
+    <div className="relative w-full h-full min-h-[520px] bg-[#080c14] rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
+      <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+
+      {/* Top Left Viewport HUD Overlay */}
+      <div className="absolute top-4 left-4 bg-[#0f172a]/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 text-xs font-mono flex items-center gap-3 shadow-lg">
+        <span className="flex items-center gap-2 font-bold text-slate-100">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></span>
+          3D DIGITAL TWIN
         </span>
-        <span className="text-slate-400">| Drag to Orbit</span>
+        <span className="text-slate-400">| Drag to Rotate • Scroll to Zoom</span>
       </div>
 
-      {/* Legend Badge */}
-      <div className="absolute bottom-3 left-3 bg-[#0f141f]/85 backdrop-blur-md p-2.5 rounded-lg border border-slate-800 text-xs flex gap-4">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span>Normal</span>
+      {/* Bottom Status Legend */}
+      <div className="absolute bottom-4 left-4 bg-[#0f172a]/90 backdrop-blur-md px-4 py-2.5 rounded-xl border border-slate-700/80 text-xs flex gap-5 shadow-lg">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+          <span className="font-semibold text-slate-200">Normal Fleet</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-          <span className="text-red-400 font-semibold">Failed (R04)</span>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-red-500 animate-ping shadow-[0_0_8px_#ef4444]"></span>
+          <span className="font-bold text-red-400">Failed (R04)</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-          <span className="text-purple-300">Recovering (R07)</span>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]"></span>
+          <span className="font-bold text-purple-300">Recovering (R07)</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-          <span>Charging</span>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+          <span className="font-semibold text-slate-200">Charging Bays</span>
         </div>
       </div>
     </div>

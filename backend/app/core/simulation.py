@@ -85,16 +85,27 @@ class WarehouseSimulation:
                                 robot.route_index = 0
                         elif robot.assigned_order_id and robot.assigned_order_id in state.orders:
                             order = state.orders[robot.assigned_order_id]
-                            # If at pick location, move to dropoff
+                            # If at pick location, route to dropoff
                             if (int(round(tgt_x)), int(round(tgt_y))) == order.pick_location:
                                 dropoff_path = self.planner.find_path(order.pick_location, order.dropoff_location)
                                 if dropoff_path:
                                     robot.route = dropoff_path
                                     robot.route_index = 0
+                            elif (int(round(tgt_x)), int(round(tgt_y))) == order.dropoff_location:
+                                # Completed dropoff! If it's a standard order, loop back to pick for continuous operations
+                                if order.id != "O104":
+                                    order.status = "IN_PROGRESS"
+                                    pick_path = self.planner.find_path(order.dropoff_location, order.pick_location)
+                                    if pick_path:
+                                        robot.route = pick_path
+                                        robot.route_index = 0
+                                else:
+                                    # O104 completed by recovery robot
+                                    order.status = "COMPLETED"
+                                    robot.status = "IDLE"
+                                    robot.route = []
+                                    robot.route_index = 0
                             else:
-                                # Delivered! Order completed, return to idle/patrol
-                                order.status = "COMPLETED"
-                                robot.status = "IDLE"
                                 robot.route = []
                                 robot.route_index = 0
                         else:
