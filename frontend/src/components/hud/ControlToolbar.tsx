@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { RotateCcw, AlertTriangle, GitBranch, Smartphone, ExternalLink } from "lucide-react";
+import { RotateCcw, AlertTriangle, GitBranch, Smartphone, ExternalLink, RefreshCw } from "lucide-react";
 
 interface ControlToolbarProps {
   onReset: () => void;
@@ -17,51 +17,55 @@ export default function ControlToolbar({
   isProcessing,
 }: ControlToolbarProps) {
   return (
-    <div className="bg-[#0f141f] border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
-      {/* Left Demo Control Group */}
-      <div className="flex items-center gap-2.5">
-        {/* Reset Demo Button */}
+    <div className="bg-surface-card border border-border-subtle rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-xl">
+      {/* Primary Golden Demo Actions */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* 1. Safe Reset Action */}
         <button
           onClick={onReset}
           disabled={isProcessing}
-          className="px-3.5 py-2 rounded-lg bg-[#161c28] hover:bg-[#20293a] border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition-all disabled:opacity-50"
+          className="px-4 py-2.5 rounded-xl border border-border-subtle bg-surface-sub hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold font-mono flex items-center gap-2 transition-all shadow-sm disabled:opacity-50"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+          <RotateCcw className="w-4 h-4 text-slate-400" />
           <span>RESET DEMO</span>
         </button>
 
-        {/* Golden Demo Trigger: FAIL R04 */}
+        {/* 2. Consequence-Weighted Destructive Trigger */}
         <button
           onClick={onFailR04}
           disabled={isProcessing}
-          className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-extrabold flex items-center gap-2 transition-all shadow-lg hover:shadow-rose-500/25 border border-rose-500/50 disabled:opacity-50"
         >
-          <AlertTriangle className="w-3.5 h-3.5" />
+          {isProcessing ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : (
+            <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
+          )}
           <span>BREAK R04 (GOLDEN DEMO)</span>
         </button>
 
-        {/* What-If Simulation Trigger */}
+        {/* 3. What-If Simulation Button */}
         <button
           onClick={onOpenWhatIf}
           disabled={isProcessing}
-          className="px-3.5 py-2 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-200 text-xs font-semibold flex items-center gap-2 transition-all disabled:opacity-50"
+          className="px-4 py-2.5 rounded-xl bg-surface-sub hover:bg-fuchsia-950/40 border border-fuchsia-500/40 text-fuchsia-300 hover:text-fuchsia-200 text-xs font-bold flex items-center gap-2 transition-all shadow-sm disabled:opacity-50"
         >
-          <GitBranch className="w-3.5 h-3.5 text-purple-400" />
+          <GitBranch className="w-4 h-4 text-fuchsia-400" />
           <span>WHAT-IF R07</span>
         </button>
       </div>
 
-      {/* Right Action: Open Mobile Client */}
+      {/* iQOO Mobile Client Link */}
       <div className="flex items-center gap-2">
         <a
-          href="http://localhost:8000/mobile/"
+          href="/mobile/"
           target="_blank"
-          rel="noreferrer"
-          className="px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-medium flex items-center gap-1.5 transition-all"
+          rel="noopener noreferrer"
+          className="px-4 py-2.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/40 text-sky-300 hover:text-white text-xs font-bold flex items-center gap-2 transition-all"
         >
-          <Smartphone className="w-3.5 h-3.5" />
+          <Smartphone className="w-4 h-4 text-sky-400" />
           <span>iQOO Mobile Operator Client</span>
-          <ExternalLink className="w-3 h-3 text-blue-400/70" />
+          <ExternalLink className="w-3.5 h-3.5 opacity-70" />
         </a>
       </div>
     </div>

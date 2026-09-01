@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, Brain, Cog, CheckCircle2, AlertOctagon, ArrowRight, ShieldCheck, Zap } from "lucide-react";
+import { Eye, Brain, Cog, ShieldCheck, AlertOctagon, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
 import { AgentThoughtStep } from "@/hooks/useWarehouseSocket";
 
 interface IncidentHeroBannerProps {
@@ -15,132 +15,147 @@ export default function IncidentHeroBanner({ activeIncident, explanation, agentS
   const failedId = explanation?.failed_robot_id || activeIncident?.robot_id || "R04";
   const selectedId = explanation?.selected_robot_id || "R07";
 
+  // Determine current active stage from recent agent step
+  const latestStep = agentSteps[0]?.agent || "SYSTEM";
+  const isPerceptionActive = hasIncident;
+  const isReasoningActive = hasIncident && (latestStep === "REASONING" || latestStep === "EXECUTION" || latestStep === "VALIDATION" || !!explanation);
+  const isExecutionActive = hasIncident && (latestStep === "EXECUTION" || latestStep === "VALIDATION" || !!explanation);
+  const isValidated = hasIncident && (latestStep === "VALIDATION" || !!explanation);
+
   return (
-    <div className="bg-[#090d16] border border-slate-800/90 rounded-2xl p-4 shadow-2xl space-y-4">
-      {/* 1. Real-time Multi-Agent Pipeline Stepper */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_#3b82f6]"></div>
+    <div className="bg-surface-card border border-border-subtle rounded-2xl p-4 shadow-2xl space-y-3.5">
+      {/* 1. Header Line */}
+      <div className="flex items-center justify-between border-b border-border-subtle pb-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-3 h-3 rounded-full ${hasIncident ? "bg-semantic-recovery animate-pulse shadow-[0_0_10px_#d946ef]" : "bg-semantic-info"}`} />
           <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-200">
             Autonomous Recovery Pipeline
           </h3>
         </div>
-        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-mono border border-blue-500/20">
-          LangGraph Closed-Loop
-        </span>
-      </div>
-
-      {/* 4 Agent Stage Nodes */}
-      <div className="grid grid-cols-4 gap-2 text-center text-xs">
-        {/* Stage 1: Perception */}
-        <div className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
-          hasIncident
-            ? "bg-red-500/10 border-red-500/40 text-red-300"
-            : "bg-[#0f1422] border-slate-800 text-slate-400"
-        }`}>
-          <Eye className={`w-4 h-4 ${hasIncident ? "text-red-400 animate-pulse" : "text-slate-500"}`} />
-          <span className="font-bold text-[11px]">1. PERCEPTION</span>
-          <span className="text-[10px] text-slate-400">
-            {hasIncident ? `${failedId} Stalled` : "Monitoring Fleet"}
+        <div className="flex items-center gap-2">
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-semantic-info font-mono border border-blue-500/20">
+            LangGraph Closed-Loop
           </span>
-        </div>
-
-        {/* Stage 2: Reasoning */}
-        <div className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
-          hasIncident
-            ? "bg-blue-500/15 border-blue-500/50 text-blue-200"
-            : "bg-[#0f1422] border-slate-800 text-slate-400"
-        }`}>
-          <Brain className={`w-4 h-4 ${hasIncident ? "text-blue-400" : "text-slate-500"}`} />
-          <span className="font-bold text-[11px]">2. REASONING</span>
-          <span className="text-[10px] text-slate-400">
-            {hasIncident ? "11 Candidates Scored" : "4-Factor Engine"}
-          </span>
-        </div>
-
-        {/* Stage 3: Execution */}
-        <div className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
-          hasIncident
-            ? "bg-purple-500/15 border-purple-500/50 text-purple-200"
-            : "bg-[#0f1422] border-slate-800 text-slate-400"
-        }`}>
-          <Cog className={`w-4 h-4 ${hasIncident ? "text-purple-400" : "text-slate-500"}`} />
-          <span className="font-bold text-[11px]">3. EXECUTION</span>
-          <span className="text-[10px] text-slate-400">
-            {hasIncident ? `${selectedId} Dispatched` : "A* Route Planner"}
-          </span>
-        </div>
-
-        {/* Stage 4: Validation */}
-        <div className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
-          hasIncident
-            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-200"
-            : "bg-[#0f1422] border-slate-800 text-slate-400"
-        }`}>
-          <ShieldCheck className={`w-4 h-4 ${hasIncident ? "text-emerald-400" : "text-slate-500"}`} />
-          <span className="font-bold text-[11px]">4. VALIDATION</span>
-          <span className="text-[10px] text-slate-400">
-            {hasIncident ? "0 Collisions • Passed" : "Deterministic Enforce"}
-          </span>
+          {isValidated && (
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-semantic-success font-bold border border-emerald-500/30 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              VERIFIED
+            </span>
+          )}
         </div>
       </div>
 
-      {/* 2. Hero Decision Card (The WOW factor) */}
+      {/* 2. Four Pipeline Stepper Nodes */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-center text-xs">
+        {/* Node 1: Perception */}
+        <div className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+          isPerceptionActive
+            ? "bg-rose-500/10 border-rose-500/40 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.15)]"
+            : "bg-surface-sub border-border-subtle text-slate-400"
+        }`}>
+          <Eye className={`w-5 h-5 ${isPerceptionActive ? "text-rose-400 animate-pulse" : "text-slate-500"}`} />
+          <span className="font-extrabold text-xs tracking-wider">1. PERCEPTION</span>
+          <span className="text-[11px] text-slate-300 font-mono">
+            {hasIncident ? `${failedId} Disruption` : "Fleet Monitoring"}
+          </span>
+        </div>
+
+        {/* Node 2: Reasoning */}
+        <div className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+          isReasoningActive
+            ? "bg-sky-500/15 border-sky-500/50 text-sky-200 shadow-[0_0_12px_rgba(56,189,248,0.15)]"
+            : "bg-surface-sub border-border-subtle text-slate-400"
+        }`}>
+          <Brain className={`w-5 h-5 ${isReasoningActive ? "text-sky-400" : "text-slate-500"}`} />
+          <span className="font-extrabold text-xs tracking-wider">2. REASONING</span>
+          <span className="text-[11px] text-slate-300 font-mono">
+            {isReasoningActive ? "11 AGVs Evaluated" : "4-Factor Scoring"}
+          </span>
+        </div>
+
+        {/* Node 3: Execution */}
+        <div className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+          isExecutionActive
+            ? "bg-fuchsia-500/15 border-fuchsia-500/50 text-fuchsia-200 shadow-[0_0_12px_rgba(217,70,239,0.15)]"
+            : "bg-surface-sub border-border-subtle text-slate-400"
+        }`}>
+          <Cog className={`w-5 h-5 ${isExecutionActive ? "text-fuchsia-400" : "text-slate-500"}`} />
+          <span className="font-extrabold text-xs tracking-wider">3. EXECUTION</span>
+          <span className="text-[11px] text-slate-300 font-mono">
+            {isExecutionActive ? `${selectedId} Dispatched` : "A* Route Planner"}
+          </span>
+        </div>
+
+        {/* Node 4: Validation */}
+        <div className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+          isValidated
+            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+            : "bg-surface-sub border-border-subtle text-slate-400"
+        }`}>
+          <ShieldCheck className={`w-5 h-5 ${isValidated ? "text-emerald-400" : "text-slate-500"}`} />
+          <span className="font-extrabold text-xs tracking-wider">4. VALIDATION</span>
+          <span className="text-[11px] text-slate-300 font-mono">
+            {isValidated ? "0 Collisions • Passed" : "Deterministic Enforce"}
+          </span>
+        </div>
+      </div>
+
+      {/* 3. Hero Decision Payoff Banner */}
       {hasIncident ? (
-        <div className="bg-gradient-to-br from-purple-950/40 via-[#0f172a] to-blue-950/30 border border-purple-500/40 rounded-xl p-4 space-y-3 shadow-xl">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-br from-purple-950/40 via-surface-card to-blue-950/30 border border-fuchsia-500/40 rounded-xl p-3.5 space-y-2.5 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 font-extrabold border border-red-500/40 text-xs flex items-center gap-1.5">
-                <AlertOctagon className="w-3.5 h-3.5" />
+              <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 font-extrabold border border-rose-500/40 text-xs flex items-center gap-1.5">
+                <AlertOctagon className="w-4 h-4" />
                 DISRUPTION: {failedId} FAILED
               </span>
               <ArrowRight className="w-4 h-4 text-slate-500" />
-              <span className="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-200 font-extrabold border border-purple-500/40 text-xs flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-purple-400" />
+              <span className="px-2.5 py-1 rounded-lg bg-fuchsia-500/20 text-fuchsia-200 font-extrabold border border-fuchsia-500/40 text-xs flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-fuchsia-400" />
                 RECOVERED BY {selectedId}
               </span>
             </div>
-            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-              SCORE: 0.82
+            <span className="text-xs font-mono font-bold text-semantic-success bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 self-start sm:self-auto">
+              RECOVERY SCORE: 0.82
             </span>
           </div>
 
-          <p className="text-xs text-slate-200 font-sans leading-relaxed">
-            <span className="font-bold text-purple-300">Why {selectedId}? </span>
+          <p className="text-xs text-slate-200 leading-relaxed font-sans">
+            <span className="font-bold text-fuchsia-300">Why {selectedId}? </span>
             {explanation?.summary_sentence || `Robot ${failedId} stalled. ${selectedId} was calculated as optimal candidate, minimizing transit cost while preserving 84% battery reserve.`}
           </p>
 
           {/* 4 Factor Highlight Pills */}
-          <div className="grid grid-cols-4 gap-2 pt-1">
-            <div className="bg-[#090d16] border border-slate-800 rounded-lg p-2 text-center">
-              <div className="text-[10px] text-slate-400 font-semibold">BATTERY</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            <div className="bg-surface-sub border border-border-subtle rounded-lg p-2 text-center">
+              <div className="text-[10px] text-slate-400 font-semibold">BATTERY RESERVE</div>
               <div className="text-xs font-bold text-cyan-400 font-mono">84% ✓</div>
             </div>
-            <div className="bg-[#090d16] border border-slate-800 rounded-lg p-2 text-center">
-              <div className="text-[10px] text-slate-400 font-semibold">A* DISTANCE</div>
-              <div className="text-xs font-bold text-blue-400 font-mono">15m ✓</div>
+            <div className="bg-surface-sub border border-border-subtle rounded-lg p-2 text-center">
+              <div className="text-[10px] text-slate-400 font-semibold">A* PATH DISTANCE</div>
+              <div className="text-xs font-bold text-sky-400 font-mono">15m ✓</div>
             </div>
-            <div className="bg-[#090d16] border border-slate-800 rounded-lg p-2 text-center">
-              <div className="text-[10px] text-slate-400 font-semibold">CONGESTION</div>
-              <div className="text-xs font-bold text-emerald-400 font-mono">0.0 LOW ✓</div>
+            <div className="bg-surface-sub border border-border-subtle rounded-lg p-2 text-center">
+              <div className="text-[10px] text-slate-400 font-semibold">CORRIDOR CONGESTION</div>
+              <div className="text-xs font-bold text-semantic-success font-mono">0.0 LOW ✓</div>
             </div>
-            <div className="bg-[#090d16] border border-slate-800 rounded-lg p-2 text-center">
-              <div className="text-[10px] text-slate-400 font-semibold">WORKLOAD</div>
-              <div className="text-xs font-bold text-purple-400 font-mono">IDLE ✓</div>
+            <div className="bg-surface-sub border border-border-subtle rounded-lg p-2 text-center">
+              <div className="text-[10px] text-slate-400 font-semibold">FLEET WORKLOAD</div>
+              <div className="text-xs font-bold text-fuchsia-400 font-mono">IDLE ✓</div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="bg-[#0f172a]/60 border border-slate-800/80 rounded-xl p-3.5 flex items-center justify-between text-xs">
+        <div className="bg-surface-sub border border-border-subtle rounded-xl p-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></span>
+            <span className="w-3 h-3 rounded-full bg-semantic-success animate-pulse shadow-[0_0_8px_#10b981]"></span>
             <div>
-              <div className="font-bold text-slate-100">Warehouse Operating in Normal State</div>
+              <div className="font-bold text-slate-100">Warehouse Operating in Normal Autonomous State</div>
               <div className="text-[11px] text-slate-400 font-mono">12 AGVs active • 7 orders in progress • 96% efficiency</div>
             </div>
           </div>
-          <span className="text-[11px] font-mono text-slate-400 border border-slate-800 px-2 py-1 rounded bg-[#090d16]">
-            Press "BREAK R04" or trigger via phone
+          <span className="text-[11px] font-mono text-slate-400 border border-border-subtle px-2.5 py-1 rounded bg-surface-card">
+            Click "BREAK R04" or trigger via phone
           </span>
         </div>
       )}

@@ -8,14 +8,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#080a0f",
-        card: "#0f141f",
-        cardBorder: "#1e293b",
-        accentBlue: "#3b82f6",
-        accentPurple: "#8b5cf6",
-        accentRed: "#ef4444",
-        accentGreen: "#10b981",
-        accentAmber: "#f59e0b",
+        surface: {
+          bg: "#06080e",
+          card: "#0d121d",
+          sub: "#080b12",
+        },
+        border: {
+          subtle: "#1e293b",
+          focus: "#38bdf8",
+        },
+        semantic: {
+          success: "#10b981",
+          failure: "#f43f5e",
+          recovery: "#d946ef",
+          info: "#38bdf8",
+          muted: "#94a3b8",
+        },
       },
     },
   },
