@@ -9,6 +9,37 @@ interface WarehouseSceneProps {
   onSelectRobot?: (robotId: string) => void;
 }
 
+function createTextSprite(text: string, bgColor: string, textColor = "#ffffff", borderColor = "#38bdf8") {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 72;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = bgColor;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(8, 6, 240, 60, 10);
+    } else {
+      ctx.rect(8, 6, 240, 60);
+    }
+    ctx.fill();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = borderColor;
+    ctx.stroke();
+
+    ctx.fillStyle = textColor;
+    ctx.font = "bold 28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, 128, 36);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(1.5, 0.42, 1);
+  return sprite;
+}
+
 export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -261,8 +292,11 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
         const domeGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.12, 16);
         const domeMat = new THREE.MeshStandardMaterial({ color: 0x111827 });
         const dome = new THREE.Mesh(domeGeo, domeMat);
-        dome.position.y = 0.32;
-        group.add(dome);
+        // Floating Text Label Sprite
+        const sprite = createTextSprite(rId, "#1e293b", "#ffffff", "#3b82f6");
+        sprite.name = "textSprite";
+        sprite.position.set(0, 0.75, 0);
+        group.add(sprite);
 
         scene.add(group);
         robotMeshesRef.current.set(rId, group);
@@ -270,7 +304,7 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
 
       group.userData = { id: rId, status: robot.status };
 
-      // Update Visual Colors Based on Live Status
+      // Update Visual Colors and Text Label Based on Live Status
       const ring = group.getObjectByName("statusRing") as THREE.Mesh;
       if (ring) {
         const ringMat = ring.material as THREE.MeshBasicMaterial;
@@ -283,6 +317,28 @@ export default function WarehouseScene({ state, onSelectRobot }: WarehouseSceneP
         } else {
           ringMat.color.setHex(0x10b981); // Healthy Green
         }
+      }
+
+      // Update Floating Label text if status changed
+      const oldSprite = group.getObjectByName("textSprite");
+      if (oldSprite) {
+        group.remove(oldSprite);
+        let labelText = `${rId} ${Math.round(robot.battery)}%`;
+        let bgCol = "#0f172a";
+        let borderCol = "#3b82f6";
+        if (robot.status === "FAILED") {
+          labelText = `${rId} ❌ FAILED`;
+          bgCol = "#7f1d1d";
+          borderCol = "#ef4444";
+        } else if (robot.status === "RECOVERING") {
+          labelText = `${rId} ⚡ RECOVER`;
+          bgCol = "#581c87";
+          borderCol = "#a855f7";
+        }
+        const newSprite = createTextSprite(labelText, bgCol, "#ffffff", borderCol);
+        newSprite.name = "textSprite";
+        newSprite.position.set(0, 0.75, 0);
+        group.add(newSprite);
       }
 
       // 2. Render A* Navigation Trajectory

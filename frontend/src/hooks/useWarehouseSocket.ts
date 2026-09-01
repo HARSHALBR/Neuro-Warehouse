@@ -65,8 +65,21 @@ export interface WarehouseFullState {
   kpis: WarehouseKPIs;
 }
 
-const BACKEND_BASE = "http://localhost:8000";
-const WS_URL = "ws://localhost:8000/ws/warehouse";
+function getBackendUrls() {
+  if (typeof window === "undefined") {
+    return {
+      http: "http://localhost:8000",
+      ws: "ws://localhost:8000/ws/warehouse",
+    };
+  }
+  const host = window.location.hostname || "localhost";
+  const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return {
+    http: `${protocol}//${host}:8000`,
+    ws: `${wsProtocol}//${host}:8000/ws/warehouse`,
+  };
+}
 
 export function useWarehouseSocket() {
   const [warehouseState, setWarehouseState] = useState<WarehouseFullState | null>(null);
@@ -90,7 +103,8 @@ export function useWarehouseSocket() {
   // Fetch full state once via REST to initialize quickly
   const fetchInitialState = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_BASE}/api/v1/warehouse/state`);
+      const urls = getBackendUrls();
+      const res = await fetch(`${urls.http}/api/v1/warehouse/state`);
       if (res.ok) {
         const data = await res.json();
         setWarehouseState(data);
@@ -104,7 +118,8 @@ export function useWarehouseSocket() {
     fetchInitialState();
 
     function connect() {
-      const ws = new WebSocket(WS_URL);
+      const urls = getBackendUrls();
+      const ws = new WebSocket(urls.ws);
       socketRef.current = ws;
 
       ws.onopen = () => {
@@ -185,7 +200,8 @@ export function useWarehouseSocket() {
   const resetWarehouse = async () => {
     setIsProcessing(true);
     try {
-      const res = await fetch(`${BACKEND_BASE}/api/v1/warehouse/reset`, {
+      const urls = getBackendUrls();
+      const res = await fetch(`${urls.http}/api/v1/warehouse/reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seed: 42 }),
@@ -203,7 +219,8 @@ export function useWarehouseSocket() {
   const triggerRobotFailure = async (robotId: string = "R04", source: string = "dashboard_hud") => {
     setIsProcessing(true);
     try {
-      const res = await fetch(`${BACKEND_BASE}/api/v1/events/robot-failure`, {
+      const urls = getBackendUrls();
+      const res = await fetch(`${urls.http}/api/v1/events/robot-failure`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ robot_id: robotId, source }),
@@ -224,7 +241,8 @@ export function useWarehouseSocket() {
 
   const runWhatIf = async (hypotheticalRobotId: string = "R07", baselineFailedId: string = "R04") => {
     try {
-      const res = await fetch(`${BACKEND_BASE}/api/v1/simulation/what-if`, {
+      const urls = getBackendUrls();
+      const res = await fetch(`${urls.http}/api/v1/simulation/what-if`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

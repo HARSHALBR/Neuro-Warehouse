@@ -73,10 +73,33 @@ class WarehouseSimulation:
                     if robot.route_index >= len(robot.route) - 1:
                         # Path completed
                         if robot.status == "RECOVERING":
+                            # Pick completed, now route to dropoff station (28, 10)
                             robot.status = "BUSY"
                             robot.color = "#10B981"
-                        robot.route = []
-                        robot.route_index = 0
+                            dropoff_path = self.planner.find_path((int(round(tgt_x)), int(round(tgt_y))), (28, 10))
+                            if dropoff_path:
+                                robot.route = dropoff_path
+                                robot.route_index = 0
+                            else:
+                                robot.route = []
+                                robot.route_index = 0
+                        elif robot.assigned_order_id and robot.assigned_order_id in state.orders:
+                            order = state.orders[robot.assigned_order_id]
+                            # If at pick location, move to dropoff
+                            if (int(round(tgt_x)), int(round(tgt_y))) == order.pick_location:
+                                dropoff_path = self.planner.find_path(order.pick_location, order.dropoff_location)
+                                if dropoff_path:
+                                    robot.route = dropoff_path
+                                    robot.route_index = 0
+                            else:
+                                # Delivered! Order completed, return to idle/patrol
+                                order.status = "COMPLETED"
+                                robot.status = "IDLE"
+                                robot.route = []
+                                robot.route_index = 0
+                        else:
+                            robot.route = []
+                            robot.route_index = 0
                 else:
                     # Interpolate movement
                     move_fraction = step_distance / dist_to_wp

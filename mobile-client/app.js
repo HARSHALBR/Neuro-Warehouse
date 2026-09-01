@@ -3,11 +3,14 @@
  * Handles tactile fleet selection, n8n/direct dispatching, Web Speech API, and real-time WebSocket sync.
  */
 
-// Configuration defaults
+const host = typeof window !== "undefined" ? (window.location.hostname || "localhost") : "localhost";
+const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "https:" : "http:";
+const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
+
 const CONFIG = {
-  FASTAPI_BASE_URL: "http://localhost:8000",
-  N8N_WEBHOOK_URL: "http://localhost:5678/webhook/phone-incident",
-  WS_URL: "ws://localhost:8000/ws/warehouse",
+  FASTAPI_BASE_URL: `${protocol}//${host}:8000`,
+  N8N_WEBHOOK_URL: `${protocol}//${host}:5678/webhook/phone-incident`,
+  WS_URL: `${wsProtocol}//${host}:8000/ws/warehouse`,
 };
 
 let currentRoutingMode = "n8n"; // "n8n" or "direct"

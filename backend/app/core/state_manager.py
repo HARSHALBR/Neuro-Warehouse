@@ -182,11 +182,24 @@ class WarehouseStateManager:
             "T07": Task(id="T07", order_id="O107", robot_id="R10", target_location=(25, 15), status="ACTIVE"),
         }
 
-        # Assign task links
+        # 7. Generate initial A* movement routes for active robots
+        from .astar import AStarPlanner
+        planner = AStarPlanner(width=self.width, height=self.height)
+        planner.set_static_obstacles(self.get_shelf_obstacles())
+
+        # Assign task links & precalculate initial routes
         for t_id, task in self.state.tasks.items():
-            if task.robot_id in self.state.robots:
-                self.state.robots[task.robot_id].current_task_id = t_id
-                self.state.robots[task.robot_id].assigned_order_id = task.order_id
+            r_id = task.robot_id
+            if r_id in self.state.robots:
+                robot = self.state.robots[r_id]
+                robot.current_task_id = t_id
+                robot.assigned_order_id = task.order_id
+                start_pt = (int(round(robot.position[0])), int(round(robot.position[1])))
+                path = planner.find_path(start_pt, task.target_location)
+                if path:
+                    robot.route = path
+                    robot.route_index = 0
+                    robot.status = "MOVING"
 
         self.recompute_kpis()
         return self.state
