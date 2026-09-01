@@ -75,8 +75,8 @@ export default function DashboardPage() {
           <div className="h-[380px]">
             <AgentThoughtFeed steps={agentSteps} />
           </div>
-          <div className="flex-1">
-            <ExplainabilityPanel explanation={latestExplanation} />
+          <div className="flex-1 min-h-[300px]">
+            <ExplainabilityPanel explanation={latestExplanation} warehouseState={warehouseState} />
           </div>
         </div>
       </div>

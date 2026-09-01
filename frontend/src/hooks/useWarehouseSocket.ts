@@ -125,6 +125,21 @@ export function useWarehouseSocket() {
       ws.onopen = () => {
         setIsConnected(true);
         addAgentStep({
+          agent: "VALIDATION",
+          step: "ARMED",
+          message: "Deterministic A* collision & battery validator armed.",
+        });
+        addAgentStep({
+          agent: "REASONING",
+          step: "READY",
+          message: "4-Factor candidate scoring engine ready (Battery 35%, Dist 35%, Congestion 20%, Workload 10%).",
+        });
+        addAgentStep({
+          agent: "PERCEPTION",
+          step: "MONITORING",
+          message: "Fleet perception active: tracking 12 AGVs and 48 inventory storage racks.",
+        });
+        addAgentStep({
           agent: "SYSTEM",
           step: "CONNECT",
           message: "Authoritative WebSocket link established with simulation core (10Hz).",
