@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useWarehouseSocket } from "@/hooks/useWarehouseSocket";
+import { useTheme } from "@/hooks/useTheme";
 import TopKpiBar from "@/components/hud/TopKpiBar";
 import WarehouseScene from "@/components/3d/WarehouseScene";
 import ControlToolbar from "@/components/hud/ControlToolbar";
@@ -9,7 +10,7 @@ import AgentThoughtFeed from "@/components/hud/AgentThoughtFeed";
 import ExplainabilityPanel from "@/components/hud/ExplainabilityPanel";
 import IncidentHeroBanner from "@/components/hud/IncidentHeroBanner";
 import WhatIfModal from "@/components/hud/WhatIfModal";
-import { Bot, Smartphone, Layers, Maximize2, Minimize2 } from "lucide-react";
+import { Bot, Smartphone, Layers, Maximize2, Minimize2, Sun, Moon } from "lucide-react";
 
 export default function DashboardPage() {
   const {
@@ -23,6 +24,8 @@ export default function DashboardPage() {
     triggerRobotFailure,
     runWhatIf,
   } = useWarehouseSocket();
+
+  const { theme, toggleTheme } = useTheme();
 
   const [isWhatIfOpen, setIsWhatIfOpen] = useState<boolean>(false);
   const [isPresentationMode, setIsPresentationMode] = useState<boolean>(false);
@@ -40,35 +43,49 @@ export default function DashboardPage() {
   return (
     <main className={`min-h-screen flex flex-col transition-all duration-300 ${
       isPresentationMode
-        ? "p-2 md:p-3 max-w-full bg-surface-bg gap-2"
+        ? "p-2 md:p-3 max-w-full gap-2.5"
         : "p-3 md:p-5 max-w-[1780px] mx-auto gap-3.5"
     }`}>
       {/* Header Bar */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border-subtle">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2.5 border-b border-[var(--border-glass)]">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
               iQOO HACKATHON 2026 • CITY BATTLES
             </span>
-            <span className="text-xs text-slate-400 font-mono">Autonomous Warehouse OS</span>
+            <span className="text-xs text-[var(--text-muted)] font-mono">Autonomous Warehouse OS</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-            <Bot className="w-8 h-8 text-blue-500" />
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
+            <Bot className="w-8 h-8 text-sky-500" />
             <span>NEUROWAREHOUSE</span>
           </h1>
-          <p className="text-xs text-slate-400 font-mono tracking-wide mt-0.5">
+          <p className="text-xs text-[var(--text-muted)] font-mono tracking-wide mt-0.5">
             "BREAK IT. WATCH IT HEAL. SEE WHY." — Multi-Agent Autonomous Recovery System
           </p>
         </div>
 
-        {/* Action Badges & Presentation Mode Button */}
+        {/* Action Badges, Theme Toggle & Presentation Mode Button */}
         <div className="flex items-center gap-2.5">
+          {/* Light / Dark Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle Theme"
+            className="p-2 rounded-xl bg-[var(--surface-glass)] border border-[var(--border-glass)] text-[var(--text-primary)] hover:border-sky-500/50 shadow-sm transition-all active:scale-95 flex items-center justify-center"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-sky-600" />
+            )}
+          </button>
+
+          {/* Presentation Mode Toggle */}
           <button
             onClick={togglePresentation}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all border ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all border shadow-sm ${
               isPresentationMode
                 ? "bg-fuchsia-600/30 border-fuchsia-500 text-fuchsia-200 shadow-md"
-                : "bg-surface-card border-border-subtle text-slate-300 hover:text-white"
+                : "bg-[var(--surface-glass)] border-[var(--border-glass)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             {isPresentationMode ? (
@@ -78,24 +95,24 @@ export default function DashboardPage() {
               </>
             ) : (
               <>
-                <Maximize2 className="w-4 h-4 text-slate-400" />
+                <Maximize2 className="w-4 h-4 text-[var(--text-muted)]" />
                 <span>PRESENTATION MODE</span>
               </>
             )}
           </button>
 
-          <div className="hidden sm:flex bg-surface-card border border-border-subtle px-3 py-1.5 rounded-xl text-xs font-mono items-center gap-2">
+          <div className="hidden sm:flex bg-[var(--surface-glass)] border border-[var(--border-glass)] px-3.5 py-2 rounded-xl text-xs font-mono items-center gap-2">
             <Layers className="w-4 h-4 text-fuchsia-400" />
-            <span className="text-slate-300">3-Agent Closed Loop</span>
+            <span className="text-[var(--text-secondary)]">3-Agent Closed Loop</span>
           </div>
 
           <a
             href="/mobile/"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-sky-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-sky-400 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
           >
-            <Smartphone className="w-4 h-4 text-sky-400" />
+            <Smartphone className="w-4 h-4" />
             <span>iQOO Field Client</span>
           </a>
         </div>
