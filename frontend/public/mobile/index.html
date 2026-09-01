@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NeuroWarehouse — iQOO Operator Client</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-group">
+        <span class="badge">iQOO FIELD CLIENT</span>
+        <h1>NeuroWarehouse</h1>
+      </div>
+      <div class="connection-status" id="connectionStatus">
+        <span class="status-dot online"></span>
+        <span id="statusText">ONLINE</span>
+      </div>
+    </header>
+
+    <!-- Route Mode Selector -->
+    <section class="routing-mode-card">
+      <div class="mode-title">Dispatch Channel</div>
+      <div class="toggle-group">
+        <button id="btnRouteN8N" class="toggle-btn active" onclick="setRoutingMode('n8n')">via n8n Broker</button>
+        <button id="btnRouteDirect" class="toggle-btn" onclick="setRoutingMode('direct')">Direct FastAPI</button>
+      </div>
+      <div class="mode-info" id="routingInfo">Forwarding via http://localhost:5678/webhook/phone-incident</div>
+    </section>
+
+    <!-- Tactile Fleet Selector Grid -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2>1. Select Target Robot</h2>
+        <span class="selected-label" id="selectedRobotLabel">Selected: R04</span>
+      </div>
+      <div class="robot-grid" id="robotGrid">
+        <!-- Generated dynamically R01..R12 -->
+      </div>
+    </section>
+
+    <!-- Disruption Trigger Actions -->
+    <section class="section-card actions-card">
+      <h2>2. Dispatch Operational Event</h2>
+      
+      <!-- Primary Tactile Failure Trigger -->
+      <button class="btn-primary btn-fail" id="btnTriggerFailure" onclick="dispatchManualFailure()">
+        <span class="btn-icon">⚠️</span>
+        <span class="btn-text">TRIGGER ROBOT FAILURE</span>
+      </button>
+
+      <div class="secondary-actions">
+        <!-- Voice Input Button -->
+        <button class="btn-secondary" id="btnVoice" onclick="toggleVoiceInput()">
+          <span class="btn-icon" id="voiceIcon">🎙️</span>
+          <span id="voiceText">Voice Incident</span>
+        </button>
+
+        <!-- QR Scanner Button -->
+        <button class="btn-secondary" id="btnQr" onclick="toggleCameraScanner()">
+          <span class="btn-icon">📷</span>
+          <span>Scan QR</span>
+        </button>
+      </div>
+
+      <!-- Live Voice / QR Feedback -->
+      <div class="sensor-feedback" id="sensorFeedback" style="display: none;">
+        <div id="sensorMessage">Listening for voice command...</div>
+        <video id="qrVideo" playsinline style="display: none;"></video>
+      </div>
+    </section>
+
+    <!-- Live Recovery Feedback -->
+    <section class="section-card feedback-card">
+      <div class="section-header">
+        <h2>3. Autonomous Recovery Feed</h2>
+        <button class="btn-reset" onclick="resetWarehouse()">Reset Seed</button>
+      </div>
+
+      <div class="recovery-status-box" id="recoveryBox">
+        <div class="status-idle">Warehouse operating normally. Ready for field events.</div>
+      </div>
+
+      <div class="event-log-container" id="eventLogs">
+        <!-- Live event log entries -->
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
