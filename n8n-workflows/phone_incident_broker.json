@@ -1,0 +1,98 @@
+{
+  "name": "NeuroWarehouse Phone Incident Broker",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "phone-incident",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node_webhook_trigger",
+      "name": "Phone Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "phone-incident"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sanitize and structure incoming mobile incident payload\nconst raw = $input.item.json.body || $input.item.json;\n\nconst robotId = (raw.robot_id || \"R04\").toUpperCase().trim();\nconst eventType = raw.event_type || \"robot_failure\";\nconst source = raw.source || \"iqoo_phone\";\nconst notes = raw.notes || \"Dispatched via iQOO Mobile Client\";\nconst timestamp = raw.timestamp || new Date().toISOString();\n\nreturn {\n  json: {\n    event_type: eventType,\n    robot_id: robotId,\n    source: source,\n    notes: notes,\n    timestamp: timestamp,\n    broker: \"n8n_local_instance\"\n  }\n};"
+      },
+      "id": "node_sanitize_payload",
+      "name": "Sanitize & Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/events/phone-trigger",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "node_http_fastapi",
+      "name": "Forward to FastAPI /phone-trigger",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node_respond_to_phone",
+      "name": "Respond to Phone Client",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Phone Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Sanitize & Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize & Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Forward to FastAPI /phone-trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to FastAPI /phone-trigger": {
+      "main": [
+        [
+          {
+            "node": "Respond to Phone Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
